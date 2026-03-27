@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Video Compressor</h1>
+<p>Compress video files to reduce their size.</p>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="video_file" accept="video/*" required>
+    <select name="quality">
+        <option value="low">Low Quality (500k)</option>
+        <option value="medium" selected>Medium Quality (1000k)</option>
+        <option value="high">High Quality (2000k)</option>
+    </select>
+    <button type="submit">Compress Video</button>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Video Metadata Viewer</h1>
+<p>View detailed metadata information of video files.</p>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="video_file" accept="video/*" required>
+    <button type="submit">View Metadata</button>
+</form>
+
+{% if metadata %}
+<div class="result">
+    <h3>Video Metadata:</h3>
+    {% if metadata.filename %}
+    <p><strong>Filename:</strong> {{ metadata.filename }}</p>
+    <p><strong>Duration:</strong> {{ metadata.duration }} seconds</p>
+    <p><strong>Size:</strong> {{ metadata.size }} bytes</p>
+    <p><strong>Bitrate:</strong> {{ metadata.bitrate }} bps</p>
+    <p><strong>Video Codec:</strong> {{ metadata.video_codec }}</p>
+    <p><strong>Audio Codec:</strong> {{ metadata.audio_codec }}</p>
+    <p><strong>Resolution:</strong> {{ metadata.width }}x{{ metadata.height }}</p>
+    {% else %}
+    <p>{{ metadata }}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

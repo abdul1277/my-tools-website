@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Subtitle Extractor</h1>
+<p>Extract subtitles from YouTube videos.</p>
+
+<form method="POST">
+    <input type="url" name="url" placeholder="Enter YouTube Video URL" required>
+    <button type="submit">Extract Subtitles</button>
+</form>
+{% endblock %}

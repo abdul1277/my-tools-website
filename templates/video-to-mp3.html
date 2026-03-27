@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Video to MP3 Converter</h1>
+<p>Convert video files to MP3 audio format.</p>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="video_file" accept="video/*" required>
+    <button type="submit">Convert to MP3</button>
+</form>
+{% endblock %}

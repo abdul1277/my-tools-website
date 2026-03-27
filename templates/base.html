@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SmartToolsHub provides free online tools like YouTube Thumbnail Downloader, PDF Merger, Image Converter and more.">
+    <meta name="theme-color" content="#667eea">
+    <title>SmartToolsHub - Free Online Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-wrapper">
+        <div class="logo">
+            <i class="fas fa-toolbox"></i>
+            <span>SmartToolsHub</span>
+        </div>
+        <nav class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <div class="dropdown">
+                <button class="dropbtn"><i class="fas fa-tools"></i> Smart Tools <i class="fas fa-chevron-down"></i></button>
+                <div class="dropdown-content">
+                    <div class="dropdown-section">
+                        <h4><i class="fas fa-file-pdf"></i> PDF Tools</h4>
+                        <a href="/pdf-merger"><i class="fas fa-object-group"></i> PDF Merger</a>
+                        <a href="/pdf-to-word"><i class="fas fa-file-word"></i> PDF to Word</a>
+                        <a href="/word-to-pdf"><i class="fas fa-file-pdf"></i> Word to PDF</a>
+                        <a href="/pdf-to-image"><i class="fas fa-image"></i> PDF to Image</a>
+                        <a href="/pdf-protect"><i class="fas fa-lock"></i> Protect PDF</a>
+                        <a href="/pdf-unlock"><i class="fas fa-unlock"></i> Unlock PDF</a>
+                        <a href="/pdf-to-html"><i class="fas fa-code"></i> PDF to HTML</a>
+                    </div>
+                    <div class="dropdown-section">
+                        <h4><i class="fas fa-image"></i> Image Tools</h4>
+                        <a href="/image-to-webp"><i class="fas fa-file-image"></i> Image to WebP</a>
+                        <a href="/remove-bg"><i class="fas fa-wand-magic-sparkles"></i> Remove Background</a>
+                        <a href="/gif-to-video"><i class="fas fa-video"></i> GIF to Video</a>
+                    </div>
+                    <div class="dropdown-section">
+                        <h4><i class="fas fa-brain"></i> AI Tools</h4>
+                        <a href="/text-to-speech"><i class="fas fa-microphone"></i> Text to Speech</a>
+                        <a href="/hashtag-generator"><i class="fas fa-hashtag"></i> Hashtag Generator</a>
+                    </div>
+                    <div class="dropdown-section">
+                        <h4><i class="fas fa-download"></i> Video Downloaders</h4>
+                        <a href="/youtube-thumbnail"><i class="fab fa-youtube"></i> YouTube Thumbnail</a>
+                        <a href="/instagram-reel-downloader"><i class="fab fa-instagram"></i> Instagram Reel</a>
+                        <a href="/tiktok-downloader"><i class="fab fa-tiktok"></i> TikTok Downloader</a>
+                        <a href="/youtube-downloader"><i class="fab fa-youtube"></i> YouTube Downloader</a>
+                        <a href="/facebook-downloader"><i class="fab fa-facebook"></i> Facebook Video</a>
+                        <a href="/twitter-downloader"><i class="fab fa-twitter"></i> Twitter Video</a>
+                        <a href="/site-downloader"><i class="fas fa-globe"></i> Site Media Downloader</a>
+                    </div>
+                    <div class="dropdown-section">
+                        <h4><i class="fas fa-ellipsis-h"></i> Other Tools</h4>
+                        <a href="/video-to-mp3"><i class="fas fa-music"></i> Video to MP3</a>
+                        <a href="/video-metadata"><i class="fas fa-info-circle"></i> Video Metadata</a>
+                        <a href="/subtitle-extractor"><i class="fas fa-closed-captioning"></i> Subtitle Extractor</a>
+                        <a href="/video-compressor"><i class="fas fa-compress"></i> Video Compressor</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</header>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3><i class="fas fa-info-circle"></i> About</h3>
+            <p>SmartToolsHub is your all-in-one solution for free online tools and converters.</p>
+        </div>
+        <div class="footer-section">
+            <h3><i class="fas fa-cogs"></i> Tools</h3>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li>20+ Free Tools</li>
+                <li>No Registration Required</li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h3><i class="fas fa-link"></i> Connect</h3>
+            <div class="social-links">
+                <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 SmartToolsHub. All Rights Reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+    </div>
+</footer>
+
+</body>
+</html>

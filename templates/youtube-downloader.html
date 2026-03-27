@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>YouTube Video Downloader</h1>
+<p>Download YouTube videos in various qualities and formats.</p>
+
+<form method="POST" style="max-width: 500px; margin-top: 20px;">
+    <div style="margin-bottom: 15px;">
+        <label for="url" style="display: block; margin-bottom: 5px;"><strong>YouTube Video URL:</strong></label>
+        <input type="url" id="url" name="url" placeholder="Enter YouTube Video URL" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <label for="quality" style="display: block; margin-bottom: 5px;"><strong>Video Quality:</strong></label>
+        <select id="quality" name="quality" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="1080p">1080p (Full HD) - Highest Quality</option>
+            <option value="720p" selected>720p (HD) - Recommended</option>
+            <option value="480p">480p (Standard Definition)</option>
+            <option value="320p">320p (Low Quality - Faster Download)</option>
+            <option value="audio_only">Audio Only (MP3)</option>
+        </select>
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <label for="format" style="display: block; margin-bottom: 5px;"><strong>Output Format:</strong></label>
+        <select id="format" name="format" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="mp4" selected>MP4 (Most Compatible)</option>
+            <option value="mkv">MKV (Best Quality)</option>
+            <option value="webm">WebM (Modern Format)</option>
+            <option value="avi">AVI (Legacy Format)</option>
+            <option value="mov">MOV (Apple Format)</option>
+        </select>
+    </div>
+    
+    <button type="submit" style="width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">Download Video</button>
+</form>
+
+<div style="margin-top: 30px; padding: 15px; background-color: #f0f0f0; border-radius: 4px; max-width: 500px;">
+    <h3 style="margin-top: 0;">📝 Format Guide:</h3>
+    <ul style="margin: 10px 0; padding-left: 20px;">
+        <li><strong>MP4</strong> - Works on all devices (phones, tablets, computers)</li>
+        <li><strong>MKV</strong> - Highest quality, best for archiving</li>
+        <li><strong>WebM</strong> - Modern format, good for web</li>
+        <li><strong>AVI</strong> - Older format, larger file size</li>
+        <li><strong>MOV</strong> - Apple devices optimized</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Convert Image to WebP</h2>
+<p>Convert JPG or PNG images into WebP format for better website performance.</p>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="image_file" accept="image/*" required>
+    <br><br>
+    <button type="submit">Convert to WebP</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>TikTok Video Downloader</h1>
+<p>Download TikTok videos without watermark.</p>
+
+<form method="POST">
+    <input type="url" name="url" placeholder="Enter TikTok Video URL" required>
+    <button type="submit">Download Video</button>
+</form>
+{% endblock %}

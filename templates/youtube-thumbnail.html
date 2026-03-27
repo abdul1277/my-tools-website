@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>YouTube Thumbnail Downloader</h2>
+
+<form method="POST">
+    <input type="text" name="video_url" placeholder="Paste YouTube Video URL" required>
+    <button type="submit">Get Thumbnail</button>
+</form>
+
+{% if error_message %}
+    <p style="color: red; margin-top: 20px;"><strong>{{ error_message }}</strong></p>
+{% endif %}
+
+{% if video_id %}
+    <h3>Thumbnail Preview:</h3>
+    <img src="https://img.youtube.com/vi/{{ video_id }}/maxresdefault.jpg" width="400" style="margin-top: 20px; margin-bottom: 20px;">
+    <br>
+    <a href="/download-thumbnail/{{ video_id }}" download>
+        <button type="button">Download Thumbnail</button>
+    </a>
+{% endif %}
+{% endblock %}

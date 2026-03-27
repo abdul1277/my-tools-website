@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Merge PDF Files Online</h2>
+<p>Combine multiple PDF files into one document instantly.</p>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="pdf_files" multiple required>
+    <br><br>
+    <button type="submit">Merge PDFs</button>
+</form>
+
+{% endblock %}
