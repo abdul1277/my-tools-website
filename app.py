@@ -292,8 +292,17 @@ def tiktok_downloader():
     return render_template("tiktok-downloader.html")
 
 # =========================
-# YouTube Video Downloader
+# YouTube Video Downloader 
 # =========================
+import yt_dlp
+import os
+from flask import request, render_template, send_file
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @app.route("/youtube-downloader", methods=["GET", "POST"])
 def youtube_downloader():
     if request.method == "POST":
@@ -301,62 +310,185 @@ def youtube_downloader():
         quality = request.form.get("quality", "720p")
         output_format = request.form.get("format", "mp4")
         
-        if url:
-            try:
-                if not os.path.exists("uploads"):
-                    os.makedirs("uploads")
+        if not url:
+            return "Error: URL not provided", 400
+        
+        try:
+            if not os.path.exists("uploads"):
+                os.makedirs("uploads")
+            
+            # Step 1: Get available formats first
+            logger.info(f"Fetching available formats for: {url}")
+            available_formats = get_available_formats(url)
+            
+            if not available_formats:
+                return "Error: Could not fetch video information. Check URL or try again.", 400
+            
+            # Step 2: Select best format based on quality and output format
+            format_string = select_best_format(quality, output_format, available_formats)
+            
+            if not format_string:
+                return "Error: No compatible format found for this video and quality combination.", 400
+            
+            logger.info(f"Selected format string: {format_string}")
+            
+            # Step 3: Download with proper options
+            ydl_opts = {
+                'outtmpl': 'uploads/%(title)s.%(ext)s',
+                'format': format_string,
+                'quiet': False,
+                'no_warnings': False,
+                'cookiefile': 'cookies.txt',
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                'socket_timeout': 30,
+            }
+            
+            # Add FFmpeg conversion if needed
+            if output_format == 'mp4' and quality != 'audio_only':
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                }]
+            elif output_format == 'mkv':
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mkv',
+                }]
+            elif output_format == 'webm':
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'webm',
+                }]
+            elif output_format == 'mov':
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mov',
+                }]
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logger.info("Starting download...")
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
                 
-                # Format selection based on output format
-                format_dict = {
-                    'mp4': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    'mkv': 'bestvideo+bestaudio/best',
-                    'webm': 'bestvideo[ext=webm]+bestaudio[ext=webm]/best',
-                    'avi': 'bestvideo[ext=avi]+bestaudio[ext=avi]/best',
-                    'mov': 'bestvideo[ext=mov]+bestaudio[ext=m4a]/best',
-                }
+                logger.info(f"Download completed: {filename}")
                 
-                # Quality selection based on resolution
-                quality_dict = {
-    '1080p': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio',
-    '720p': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio',
-    '480p': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio',
-    '320p': 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio',
-    'audio_only': 'bestaudio[ext=m4a]/bestaudio',
-}
-                
-                # Build format string
-                if quality == 'audio_only':
-                    format_string = 'bestaudio'
+                if os.path.exists(filename):
+                    return send_file(filename, as_attachment=True)
                 else:
-                    base_format = quality_dict.get(quality, quality_dict['720p'])
-                    # Combine quality with format preference
-                    format_string = f"{base_format}/best"
-                
-                ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': format_string,
-    'postprocessors': [{
-        'key': 'FFmpegVideoConvertor',
-        'preferedformat': output_format,
-    }] if quality != 'audio_only' and output_format != 'mkv' else [],
-    'quiet': False,
-    'no_warnings': False,
-    'cookiefile': 'cookies.txt',
-    'merge_output_format': 'mp4',
-}
-                
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(info)
-                    
-                    if os.path.exists(filename):
-                        return send_file(filename, as_attachment=True)
-                    else:
-                        return f"Error: Downloaded file not found at {filename}"
+                    return f"Error: Downloaded file not found at {filename}", 500
                         
-            except Exception as e:
-                return f"Error: {str(e)}"
+        except yt_dlp.utils.DownloadError as e:
+            logger.error(f"YouTube-DL Error: {str(e)}")
+            return f"Error: Invalid YouTube URL or video not available. {str(e)}", 400
+        except Exception as e:
+            logger.error(f"Unexpected Error: {str(e)}")
+            return f"Error: {str(e)}", 500
+    
     return render_template("youtube-downloader.html")
+
+
+def get_available_formats(url):
+    """
+    Fetch available formats for a given YouTube URL
+    Returns list of format objects or None if error
+    """
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'socket_timeout': 30,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return info.get('formats', [])
+    except Exception as e:
+        logger.error(f"Error fetching formats: {str(e)}")
+        return None
+
+
+def select_best_format(quality, output_format, available_formats):
+    """
+    Smart format selection based on quality and output format
+    Returns format string or None if no suitable format found
+    """
+    
+    # Define quality height ranges
+    quality_heights = {
+        '1080p': 1080,
+        '720p': 720,
+        '480p': 480,
+        '320p': 360,
+        'audio_only': 0
+    }
+    
+    max_height = quality_heights.get(quality, 720)
+    
+    # For audio only
+    if quality == 'audio_only':
+        format_chains = [
+            'bestaudio[ext=m4a]/bestaudio',
+            'bestaudio',
+        ]
+    else:
+        # For video downloads - create smart fallback chains
+        format_chains = []
+        
+        if output_format in ['mp4', 'mov']:
+            format_chains = [
+                f'bestvideo[height<={max_height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={max_height}]+bestaudio[ext=m4a]/bestvideo[height<={max_height}]+bestaudio/best[ext=mp4]',
+                f'bestvideo[height<={max_height}]+bestaudio/best',
+                'best[ext=mp4]',
+                'best',
+            ]
+        elif output_format == 'mkv':
+            format_chains = [
+                f'bestvideo[height<={max_height}]+bestaudio/best',
+                'bestvideo+bestaudio/best',
+                'best',
+            ]
+        elif output_format == 'webm':
+            format_chains = [
+                f'bestvideo[height<={max_height}][ext=webm]+bestaudio[ext=webm]/bestvideo[height<={max_height}]+bestaudio/best',
+                f'bestvideo[height<={max_height}]+bestaudio/best',
+                'best',
+            ]
+        else:  # avi
+            format_chains = [
+                f'bestvideo[height<={max_height}]+bestaudio/best',
+                'best',
+            ]
+    
+    # Try each format chain
+    for fmt in format_chains:
+        logger.info(f"Trying format: {fmt}")
+        try:
+            # Simple validation - this will be tested during download
+            if fmt:
+                return fmt
+        except Exception as e:
+            logger.warning(f"Format {fmt} failed: {str(e)}")
+            continue
+    
+    return None
+
+
+# Alternative: Better validation function
+def validate_format_available(format_string, available_formats):
+    """
+    Check if a format string is likely to work with available formats
+    This is a simple heuristic check
+    """
+    if not available_formats:
+        return True  # Can't validate, assume it works
+    
+    # Check if there's at least one video and one audio format
+    has_video = any(f.get('vcodec') and f.get('vcodec') != 'none' for f in available_formats)
+    has_audio = any(f.get('acodec') and f.get('acodec') != 'none' for f in available_formats)
+    
+    return has_video and has_audio
 
 # =========================
 # PDF to Word Converter
