@@ -603,7 +603,21 @@ def facebook_downloader():
         url = request.form.get("url")
         if url:
             try:
-                ydl_opts = {'outtmpl': 'uploads/%(title)s.%(ext)s', 'format': 'best', 'cookiefile': 'cookies.txt'}
+                ydl_opts = {
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': 'best',
+    'cookiefile': 'cookies.txt',
+    'quiet': True,
+    'no_warnings': True,
+    'extractor_args': {
+        'facebook': {
+            'webpage_url': True,
+        }
+    },
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
