@@ -153,10 +153,11 @@ def instagram_reel_downloader():
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
                 ydl_opts = {
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': 'best',
-                    'quiet': True
-                }
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': 'best',
+    'quiet': True,
+    'cookiefile': 'cookies.txt'
+}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -277,9 +278,11 @@ def tiktok_downloader():
         if url:
             try:
                 ydl_opts = {
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': 'best',
-                }
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': 'best',
+    'quiet': True,
+    'cookiefile': 'cookies.txt'
+}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -330,15 +333,16 @@ def youtube_downloader():
                     format_string = f"{base_format}/best"
                 
                 ydl_opts = {
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': format_string,
-                    'postprocessors': [{
-                        'key': 'FFmpegVideoConvertor',
-                        'preferedformat': output_format,
-                    }] if quality != 'audio_only' and output_format != 'mkv' else [],
-                    'quiet': False,
-                    'no_warnings': False,
-                }
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': format_string,
+    'postprocessors': [{
+        'key': 'FFmpegVideoConvertor',
+        'preferedformat': output_format,
+    }] if quality != 'audio_only' and output_format != 'mkv' else [],
+    'quiet': False,
+    'no_warnings': False,
+    'cookiefile': 'cookies.txt'
+}
                 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
@@ -598,7 +602,7 @@ def facebook_downloader():
         url = request.form.get("url")
         if url:
             try:
-                ydl_opts = {'outtmpl': 'uploads/%(title)s.%(ext)s', 'format': 'best'}
+                ydl_opts = {'outtmpl': 'uploads/%(title)s.%(ext)s', 'format': 'best', 'cookiefile': 'cookies.txt'}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
