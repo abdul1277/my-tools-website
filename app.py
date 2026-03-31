@@ -317,12 +317,12 @@ def youtube_downloader():
                 
                 # Quality selection based on resolution
                 quality_dict = {
-                    '1080p': 'bestvideo[height<=1080]+bestaudio',
-                    '720p': 'bestvideo[height<=720]+bestaudio',
-                    '480p': 'bestvideo[height<=480]+bestaudio',
-                    '320p': 'bestvideo[height<=320]+bestaudio',
-                    'audio_only': 'bestaudio',
-                }
+    '1080p': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio',
+    '720p': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio',
+    '480p': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio',
+    '320p': 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio',
+    'audio_only': 'bestaudio[ext=m4a]/bestaudio',
+}
                 
                 # Build format string
                 if quality == 'audio_only':
@@ -341,7 +341,8 @@ def youtube_downloader():
     }] if quality != 'audio_only' and output_format != 'mkv' else [],
     'quiet': False,
     'no_warnings': False,
-    'cookiefile': 'cookies.txt'
+    'cookiefile': 'cookies.txt',
+    'merge_output_format': 'mp4',
 }
                 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
