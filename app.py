@@ -306,41 +306,19 @@ def youtube_downloader():
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
 
-                # Bulletproof format selection with many fallbacks
-                format_map = {
-                    '1080p': [
-                        'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]',
-                        'bestvideo[height<=1080]+bestaudio',
-                        'best[height<=1080]',
-                        'best',
-                    ],
-                    '720p': [
-                        'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]',
-                        'bestvideo[height<=720]+bestaudio',
-                        'best[height<=720]',
-                        'best',
-                    ],
-                    '480p': [
-                        'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]',
-                        'bestvideo[height<=480]+bestaudio',
-                        'best[height<=480]',
-                        'best',
-                    ],
-                    '320p': [
-                        'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]',
-                        'bestvideo[height<=360]+bestaudio',
-                        'best[height<=360]',
-                        'best',
-                    ],
-                    'audio_only': [
-                        'bestaudio[ext=m4a]',
-                        'bestaudio[ext=mp3]',
-                        'bestaudio',
-                    ],
-                }
-
-                formats = format_map.get(quality, format_map['720p'])
-                format_string = '/'.join(formats)
+                # Simple aur reliable format - koi ext constraint nahi
+                if quality == 'audio_only':
+                    format_string = 'bestaudio/best'
+                elif quality == '1080p':
+                    format_string = 'bestvideo[height<=1080]+bestaudio/bestvideo+bestaudio/best'
+                elif quality == '720p':
+                    format_string = 'bestvideo[height<=720]+bestaudio/bestvideo+bestaudio/best'
+                elif quality == '480p':
+                    format_string = 'bestvideo[height<=480]+bestaudio/bestvideo+bestaudio/best'
+                elif quality == '320p':
+                    format_string = 'bestvideo[height<=360]+bestaudio/bestvideo+bestaudio/best'
+                else:
+                    format_string = 'bestvideo+bestaudio/best'
 
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
@@ -353,12 +331,9 @@ def youtube_downloader():
                     'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
                     'quiet': True,
                     'no_warnings': True,
-                    'extractor_retries': 5,
-                    'fragment_retries': 5,
-                    'ignoreerrors': False,
+                    'extractor_retries': 3,
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept-Language': 'en-US,en;q=0.9',
                     },
                 }
 
@@ -366,21 +341,20 @@ def youtube_downloader():
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
 
-                    # Try mp4 first, then original
+                    # mp4 file check karo
                     mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
                     if os.path.exists(mp4_file):
                         return send_file(mp4_file, as_attachment=True)
                     elif os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
                     else:
-                        # Search uploads folder for recently downloaded file
-                        files = sorted(
-                            [f for f in os.listdir('uploads')],
-                            key=lambda x: os.path.getmtime(os.path.join('uploads', x)),
-                            reverse=True
-                        )
-                        if files:
-                            latest = os.path.join('uploads', files[0])
+                        # Latest downloaded file dhundho
+                        all_files = [
+                            os.path.join('uploads', f)
+                            for f in os.listdir('uploads')
+                        ]
+                        if all_files:
+                            latest = max(all_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
                         error = "File nahi mila, dobara try karo."
 
