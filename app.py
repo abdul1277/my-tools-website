@@ -44,6 +44,22 @@ def sitemap():
     return send_from_directory('.', 'sitemap.xml')
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/privacy-policy")
+def privacy_policy():
+    return render_template("privacy-policy.html")
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    success = False
+    if request.method == "POST":
+        success = True
+    return render_template("contact.html", success=success)
+
+
 # =========================
 # YouTube Thumbnail Tool
 # =========================
