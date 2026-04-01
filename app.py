@@ -308,17 +308,17 @@ def youtube_downloader():
 
                 # Simple aur reliable format - koi ext constraint nahi
                 if quality == 'audio_only':
-    format_string = 'bestaudio/best'
-elif quality == '1080p':
-    format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
-elif quality == '720p':
-    format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
-elif quality == '480p':
-    format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
-elif quality == '320p':
-    format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
-else:
-    format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
+            format_string = 'bestaudio/best'
+        elif quality == '1080p':
+            format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+        elif quality == '720p':
+            format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+        elif quality == '480p':
+            format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+        elif quality == '320p':
+            format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
+        else:
+            format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
 
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
