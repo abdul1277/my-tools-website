@@ -308,34 +308,36 @@ def youtube_downloader():
 
                 # Simple aur reliable format - koi ext constraint nahi
                 if quality == 'audio_only':
-                    format_string = 'bestaudio/best'
-                elif quality == '1080p':
-                    format_string = 'bestvideo[height<=1080]+bestaudio/bestvideo+bestaudio/best'
-                elif quality == '720p':
-                    format_string = 'bestvideo[height<=720]+bestaudio/bestvideo+bestaudio/best'
-                elif quality == '480p':
-                    format_string = 'bestvideo[height<=480]+bestaudio/bestvideo+bestaudio/best'
-                elif quality == '320p':
-                    format_string = 'bestvideo[height<=360]+bestaudio/bestvideo+bestaudio/best'
-                else:
-                    format_string = 'bestvideo+bestaudio/best'
+    format_string = 'bestaudio/best'
+elif quality == '1080p':
+    format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+elif quality == '720p':
+    format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+elif quality == '480p':
+    format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+elif quality == '320p':
+    format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
+else:
+    format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
 
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
 
                 ydl_opts = {
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': format_string,
-                    'merge_output_format': 'mp4',
-                    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
-                    'quiet': True,
-                    'no_warnings': True,
-                    'extractor_retries': 3,
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    },
-                }
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': format_string,
+    'merge_output_format': 'mp4',
+    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
+    'quiet': True,
+    'no_warnings': True,
+    'extractor_retries': 3,
+    'format_sort': ['res', 'ext:mp4:m4a'],  # ← yeh add karo
+    'ignoreerrors': False,
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+}
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
