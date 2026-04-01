@@ -12,7 +12,6 @@ import subprocess
 import requests
 from io import BytesIO
 
-# new libraries
 from pdf2docx import Converter
 from docx2pdf import convert as docx2pdf_convert
 from pdf2image import convert_from_path
@@ -26,6 +25,7 @@ from rembg import remove
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"
+
 
 # =========================
 # Home Route
@@ -42,22 +42,16 @@ def home():
 def youtube_thumbnail():
     video_id = None
     error_message = None
-
     if request.method == "POST":
         video_url = request.form.get("video_url", "").strip()
-
         if video_url:
-            # Handle youtu.be short URLs
             if "youtu.be/" in video_url:
                 video_id = video_url.split("youtu.be/")[1].split("?")[0].split("&")[0]
-            # Handle standard youtube.com URLs
             elif "youtube.com" in video_url:
                 if "v=" in video_url:
                     video_id = video_url.split("v=")[1].split("&")[0]
-            
             if not video_id:
                 error_message = "Invalid YouTube URL. Please paste a valid YouTube video link."
-
     return render_template("youtube-thumbnail.html", video_id=video_id, error_message=error_message)
 
 
@@ -67,25 +61,19 @@ def youtube_thumbnail():
 @app.route("/download-thumbnail/<video_id>")
 def download_thumbnail(video_id):
     try:
-        # Try to download with maxresdefault first, if fails try other qualities
         qualities = ["maxresdefault", "sddefault", "hqdefault", "mqdefault", "default"]
-        
         for quality in qualities:
             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/{quality}.jpg"
             response = requests.get(thumbnail_url, timeout=5)
-            
             if response.status_code == 200:
-                # Save to BytesIO object
                 img_bytes = BytesIO(response.content)
                 img_bytes.seek(0)
-                
                 return send_file(
                     img_bytes,
                     mimetype="image/jpeg",
                     as_attachment=True,
                     download_name=f"youtube_thumbnail_{video_id}.jpg"
                 )
-        
         return "Thumbnail not found", 404
     except Exception as e:
         return f"Error downloading thumbnail: {str(e)}", 500
@@ -99,22 +87,18 @@ def pdf_merger():
     if request.method == "POST":
         files = request.files.getlist("pdf_files")
         merger = PdfMerger()
-
         if not os.path.exists("uploads"):
             os.makedirs("uploads")
-
         for file in files:
             filepath = os.path.join("uploads", file.filename)
             file.save(filepath)
             merger.append(filepath)
-
         output_path = os.path.join("uploads", "merged.pdf")
         merger.write(output_path)
         merger.close()
-
         return send_file(output_path, as_attachment=True)
-
     return render_template("pdf-merger.html")
+
 
 # =========================
 # Image to WebP Converter
@@ -123,23 +107,18 @@ def pdf_merger():
 def image_to_webp():
     if request.method == "POST":
         file = request.files["image_file"]
-
         if file:
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
-
             unique_name = str(uuid.uuid4()) + ".webp"
             input_path = os.path.join("uploads", file.filename)
             output_path = os.path.join("uploads", unique_name)
-
             file.save(input_path)
-
             img = Image.open(input_path)
             img.save(output_path, "webp", quality=80)
-
             return send_file(output_path, as_attachment=True)
-
     return render_template("image-to-webp.html")
+
 
 # =========================
 # Instagram Reel Downloader
@@ -153,11 +132,11 @@ def instagram_reel_downloader():
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
                 ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': 'best',
-    'quiet': True,
-    'cookiefile': 'cookies.txt'
-}
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': 'best',
+                    'quiet': True,
+                    'cookiefile': 'cookies.txt'
+                }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -165,6 +144,7 @@ def instagram_reel_downloader():
             except Exception as e:
                 return f"Error: {str(e)}"
     return render_template("instagram-reel-downloader.html")
+
 
 # =========================
 # Video to MP3 Converter
@@ -184,6 +164,7 @@ def video_to_mp3():
             return send_file(output_path, as_attachment=True)
     return render_template("video-to-mp3.html")
 
+
 # =========================
 # Video Metadata Viewer
 # =========================
@@ -199,8 +180,8 @@ def video_metadata():
             file.save(input_path)
             try:
                 probe = ffmpeg.probe(input_path)
-                video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-                audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
+                video_stream = next((s for s in probe['streams'] if s['codec_type'] == 'video'), None)
+                audio_stream = next((s for s in probe['streams'] if s['codec_type'] == 'audio'), None)
                 format_info = probe['format']
                 metadata = {
                     'filename': file.filename,
@@ -215,6 +196,7 @@ def video_metadata():
             except Exception as e:
                 metadata = f"Unable to extract metadata: {str(e)}"
     return render_template("video-metadata.html", metadata=metadata)
+
 
 # =========================
 # Subtitle Extractor
@@ -234,7 +216,6 @@ def subtitle_extractor():
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     title = info['title']
-                    # Look for subtitle files
                     for file in os.listdir('uploads'):
                         if title in file and (file.endswith('.en.vtt') or file.endswith('.en.srt')):
                             return send_file(os.path.join('uploads', file), as_attachment=True)
@@ -242,6 +223,7 @@ def subtitle_extractor():
             except Exception as e:
                 return f"Error: {str(e)}"
     return render_template("subtitle-extractor.html")
+
 
 # =========================
 # Video Compressor
@@ -257,7 +239,6 @@ def video_compressor():
             input_path = os.path.join("uploads", file.filename)
             output_path = os.path.join("uploads", "compressed_" + file.filename)
             file.save(input_path)
-            # Simple compression using ffmpeg
             if quality == "low":
                 bitrate = "500k"
             elif quality == "medium":
@@ -267,6 +248,7 @@ def video_compressor():
             ffmpeg.input(input_path).output(output_path, video_bitrate=bitrate).run()
             return send_file(output_path, as_attachment=True)
     return render_template("video-compressor.html")
+
 
 # =========================
 # TikTok Downloader
@@ -278,11 +260,11 @@ def tiktok_downloader():
         if url:
             try:
                 ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': 'best',
-    'quiet': True,
-    'cookiefile': 'cookies.txt'
-}
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': 'best',
+                    'quiet': True,
+                    'cookiefile': 'cookies.txt'
+                }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -291,8 +273,9 @@ def tiktok_downloader():
                 return f"Error: {str(e)}"
     return render_template("tiktok-downloader.html")
 
+
 # =========================
-# YouTube Video Downloader 
+# YouTube Video Downloader
 # =========================
 @app.route("/youtube-downloader", methods=["GET", "POST"])
 def youtube_downloader():
@@ -300,61 +283,52 @@ def youtube_downloader():
     if request.method == "POST":
         url = request.form.get("url", "").strip()
         quality = request.form.get("quality", "720p")
-
         if url:
             try:
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
 
-                # Simple aur reliable format - koi ext constraint nahi
                 if quality == 'audio_only':
-            format_string = 'bestaudio/best'
-        elif quality == '1080p':
-            format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
-        elif quality == '720p':
-            format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
-        elif quality == '480p':
-            format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
-        elif quality == '320p':
-            format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
-        else:
-            format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
+                    format_string = 'bestaudio/best'
+                elif quality == '1080p':
+                    format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
+                elif quality == '720p':
+                    format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+                elif quality == '480p':
+                    format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
+                elif quality == '320p':
+                    format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
+                else:
+                    format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
 
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
 
                 ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': format_string,
-    'merge_output_format': 'mp4',
-    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
-    'quiet': True,
-    'no_warnings': True,
-    'extractor_retries': 3,
-    'format_sort': ['res', 'ext:mp4:m4a'],  # ← yeh add karo
-    'ignoreerrors': False,
-    'http_headers': {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    },
-}
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': format_string,
+                    'merge_output_format': 'mp4',
+                    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'extractor_retries': 3,
+                    'format_sort': ['res', 'ext:mp4:m4a'],
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    },
+                }
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
-
-                    # mp4 file check karo
                     mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
                     if os.path.exists(mp4_file):
                         return send_file(mp4_file, as_attachment=True)
                     elif os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
                     else:
-                        # Latest downloaded file dhundho
-                        all_files = [
-                            os.path.join('uploads', f)
-                            for f in os.listdir('uploads')
-                        ]
+                        all_files = [os.path.join('uploads', f) for f in os.listdir('uploads')]
                         if all_files:
                             latest = max(all_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
@@ -364,6 +338,7 @@ def youtube_downloader():
                 error = str(e)
 
     return render_template("youtube-downloader.html", error=error)
+
 
 # =========================
 # PDF to Word Converter
@@ -376,7 +351,7 @@ def pdf_to_word():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            output_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + ".docx")
+            output_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + ".docx")
             file.save(input_path)
             try:
                 cv = Converter(input_path)
@@ -386,6 +361,7 @@ def pdf_to_word():
             except Exception as e:
                 return f"Error converting PDF to Word: {e}"
     return render_template("pdf-to-word.html")
+
 
 # =========================
 # Word to PDF Converter
@@ -398,7 +374,7 @@ def word_to_pdf():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            output_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + ".pdf")
+            output_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + ".pdf")
             file.save(input_path)
             try:
                 docx2pdf_convert(input_path, output_path)
@@ -407,8 +383,9 @@ def word_to_pdf():
                 return f"Error converting Word to PDF: {e}"
     return render_template("word-to-pdf.html")
 
+
 # =========================
-# PDF to Image Converter (pages zipped)
+# PDF to Image Converter
 # =========================
 @app.route("/pdf-to-image", methods=["GET", "POST"])
 def pdf_to_image():
@@ -418,7 +395,7 @@ def pdf_to_image():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            zip_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + "_images.zip")
+            zip_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + "_images.zip")
             file.save(input_path)
             try:
                 pages = convert_from_path(input_path)
@@ -434,8 +411,9 @@ def pdf_to_image():
                 return f"Error converting PDF to images: {e}"
     return render_template("pdf-to-image.html")
 
+
 # =========================
-# PDF Protect (add password)
+# PDF Protect Tool
 # =========================
 @app.route("/pdf-protect", methods=["GET", "POST"])
 def pdf_protect():
@@ -446,7 +424,7 @@ def pdf_protect():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            output_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + "_protected.pdf")
+            output_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + "_protected.pdf")
             file.save(input_path)
             try:
                 reader = PdfReader(input_path)
@@ -461,8 +439,9 @@ def pdf_protect():
                 return f"Error protecting PDF: {e}"
     return render_template("pdf-protect.html")
 
+
 # =========================
-# PDF Unlock (remove password)
+# PDF Unlock Tool
 # =========================
 @app.route("/pdf-unlock", methods=["GET", "POST"])
 def pdf_unlock():
@@ -473,7 +452,7 @@ def pdf_unlock():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            output_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + "_unlocked.pdf")
+            output_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + "_unlocked.pdf")
             file.save(input_path)
             try:
                 reader = PdfReader(input_path)
@@ -489,8 +468,9 @@ def pdf_unlock():
                 return f"Error unlocking PDF: {e}"
     return render_template("pdf-unlock.html")
 
+
 # =========================
-# PDF to HTML (embed pages as images)
+# PDF to HTML Converter
 # =========================
 @app.route("/pdf-to-html", methods=["GET", "POST"])
 def pdf_to_html():
@@ -500,7 +480,7 @@ def pdf_to_html():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            html_filename = file.filename.rsplit('.',1)[0] + ".html"
+            html_filename = file.filename.rsplit('.', 1)[0] + ".html"
             html_path = os.path.join("uploads", html_filename)
             file.save(input_path)
             try:
@@ -518,6 +498,7 @@ def pdf_to_html():
             except Exception as e:
                 return f"Error converting PDF to HTML: {e}"
     return render_template("pdf-to-html.html")
+
 
 # =========================
 # Image Background Remover
@@ -541,6 +522,7 @@ def remove_bg():
                 return f"Error removing background: {e}"
     return render_template("remove-bg.html")
 
+
 # =========================
 # GIF to Video Converter
 # =========================
@@ -552,7 +534,7 @@ def gif_to_video():
             if not os.path.exists("uploads"):
                 os.makedirs("uploads")
             input_path = os.path.join("uploads", file.filename)
-            output_path = os.path.join("uploads", file.filename.rsplit('.',1)[0] + ".mp4")
+            output_path = os.path.join("uploads", file.filename.rsplit('.', 1)[0] + ".mp4")
             file.save(input_path)
             try:
                 clip = mp.VideoFileClip(input_path)
@@ -562,8 +544,9 @@ def gif_to_video():
                 return f"Error converting GIF to video: {e}"
     return render_template("gif-to-video.html")
 
+
 # =========================
-# Website Media Downloader (images + videos)
+# Website Media Downloader
 # =========================
 @app.route("/site-downloader", methods=["GET", "POST"])
 def site_downloader():
@@ -601,6 +584,7 @@ def site_downloader():
                 return f"Error downloading site media: {e}"
     return render_template("site-downloader.html")
 
+
 # =========================
 # Facebook Video Downloader
 # =========================
@@ -611,20 +595,15 @@ def facebook_downloader():
         if url:
             try:
                 ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': 'best',
-    'cookiefile': 'cookies.txt',
-    'quiet': True,
-    'no_warnings': True,
-    'extractor_args': {
-        'facebook': {
-            'webpage_url': True,
-        }
-    },
-    'http_headers': {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    },
-}
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': 'best',
+                    'cookiefile': 'cookies.txt',
+                    'quiet': True,
+                    'no_warnings': True,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    },
+                }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -633,8 +612,9 @@ def facebook_downloader():
                 return f"Error: {e}"
     return render_template("facebook-downloader.html")
 
+
 # =========================
-# Twitter / X Video Downloader
+# Twitter / X Downloader
 # =========================
 @app.route("/twitter-downloader", methods=["GET", "POST"])
 def twitter_downloader():
@@ -651,8 +631,9 @@ def twitter_downloader():
                 return f"Error: {e}"
     return render_template("twitter-downloader.html")
 
+
 # =========================
-# Text to Speech
+# Text to Speech Tool
 # =========================
 @app.route("/text-to-speech", methods=["GET", "POST"])
 def text_to_speech():
@@ -668,8 +649,9 @@ def text_to_speech():
                 return f"Error generating speech: {e}"
     return render_template("text-to-speech.html")
 
+
 # =========================
-# Keyword / Hashtag Generator
+# Hashtag Generator Tool
 # =========================
 @app.route("/hashtag-generator", methods=["GET", "POST"])
 def hashtag_generator():
@@ -682,7 +664,6 @@ def hashtag_generator():
                 from nltk.corpus import stopwords
                 words = [w.strip('.,!?"\'') for w in text.split()]
                 filtered = [w for w in words if w.lower() not in stopwords.words('english') and len(w) > 2]
-                # pick top 10 unique words
                 unique = []
                 for w in filtered:
                     lw = w.lower()
@@ -693,11 +674,6 @@ def hashtag_generator():
                 hashtags = [f"Error generating hashtags: {e}"]
     return render_template("hashtag-generator.html", hashtags=hashtags)
 
-# =========================
-# Run App
-# =========================
-if __name__ == "__main__":
-    app.run(debug=True)
 
 # =========================
 # Run App
