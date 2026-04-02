@@ -318,12 +318,7 @@ def youtube_downloader():
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
 
-                # Pehle available formats check karo
-                check_opts = {
-                    'quiet': True,
-                    'no_warnings': True,
-                    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
-                }
+                cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
 
                 height_map = {
                     '1080p': 1080,
@@ -332,66 +327,120 @@ def youtube_downloader():
                     '320p': 360,
                 }
 
-                with yt_dlp.YoutubeDL(check_opts) as ydl:
+                # Step 1: Pehle available formats fetch karo
+                info_opts = {
+                    'quiet': True,
+                    'no_warnings': True,
+                    'cookiefile': cookie_file,
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    },
+                }
+
+                with yt_dlp.YoutubeDL(info_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
-                    formats = info.get('formats', [])
 
-                    if quality == 'audio_only':
-                        format_string = 'bestaudio/best'
+                formats = info.get('formats', [])
+
+                if quality == 'audio_only':
+                    # Audio ke liye best audio format dhundho
+                    audio_formats = [
+                        f for f in formats
+                        if f.get('vcodec') == 'none' and f.get('acodec') != 'none'
+                    ]
+                    if audio_formats:
+                        best_audio = max(audio_formats, key=lambda x: x.get('abr') or 0)
+                        format_id = best_audio['format_id']
+                        format_string = format_id
                     else:
-                        height = height_map.get(quality, 720)
+                        format_string = 'bestaudio/best'
+                else:
+                    target_height = height_map.get(quality, 720)
 
-                        # Available formats mein se best dhundho
-                        available_heights = []
-                        for f in formats:
-                            h = f.get('height')
-                            if h:
-                                available_heights.append(h)
+                    # Video formats filter karo
+                    video_formats = [
+                        f for f in formats
+                        if f.get('vcodec') != 'none'
+                        and f.get('height') is not None
+                        and f.get('height') <= target_height
+                    ]
 
-                        available_heights = sorted(set(available_heights), reverse=True)
+                    # Audio formats
+                    audio_formats = [
+                        f for f in formats
+                        if f.get('vcodec') == 'none'
+                        and f.get('acodec') != 'none'
+                    ]
 
-                        # User ki requested quality ya usse neeche wali best quality
-                        selected_height = height
-                        for h in available_heights:
-                            if h <= height:
-                                selected_height = h
-                                break
-
-                        if not available_heights:
-                            format_string = 'best'
+                    if video_formats and audio_formats:
+                        # Best video (highest available <= target)
+                        best_video = max(video_formats, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
+                        # Best audio
+                        best_audio = max(audio_formats, key=lambda x: x.get('abr') or 0)
+                        format_string = f"{best_video['format_id']}+{best_audio['format_id']}"
+                    elif video_formats:
+                        best_video = max(video_formats, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
+                        format_string = best_video['format_id']
+                    else:
+                        # Koi bhi format nahi mila to fallback
+                        combined = [
+                            f for f in formats
+                            if f.get('height') is not None
+                            and f.get('height') <= target_height
+                            and f.get('acodec') != 'none'
+                        ]
+                        if combined:
+                            best = max(combined, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
+                            format_string = best['format_id']
                         else:
-                            format_string = f'bestvideo[height<={selected_height}]+bestaudio/best[height<={selected_height}]/best'
+                            # Last resort — jo bhi available ho
+                            all_combined = [
+                                f for f in formats
+                                if f.get('acodec') != 'none'
+                                and f.get('vcodec') != 'none'
+                            ]
+                            if all_combined:
+                                best = max(all_combined, key=lambda x: x.get('tbr') or 0)
+                                format_string = best['format_id']
+                            else:
+                                format_string = 'best'
 
+                # Step 2: Download karo
                 ydl_opts = {
                     'outtmpl': 'uploads/%(title)s.%(ext)s',
                     'format': format_string,
                     'merge_output_format': 'mp4',
-                    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
+                    'cookiefile': cookie_file,
                     'quiet': True,
                     'no_warnings': True,
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept-Language': 'en-US,en;q=0.9',
                     },
                 }
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(info)
+                    dl_info = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(dl_info)
 
+                    # File dhundho
                     mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
                     if os.path.exists(mp4_file):
                         return send_file(mp4_file, as_attachment=True)
                     elif os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
                     else:
-                        all_files = [
+                        # Latest file uploads mein dhundho
+                        upload_files = [
                             os.path.join('uploads', f)
                             for f in os.listdir('uploads')
+                            if os.path.isfile(os.path.join('uploads', f))
                         ]
-                        if all_files:
-                            latest = max(all_files, key=os.path.getmtime)
+                        if upload_files:
+                            latest = max(upload_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
-                        error = "File nahi mila, dobara try karo."
+                        error = "File nahi mili, dobara try karo."
 
             except Exception as e:
                 error = str(e)
