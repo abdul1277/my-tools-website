@@ -308,27 +308,59 @@ def youtube_downloader():
     if request.method == "POST":
         url = request.form.get("url", "").strip()
         quality = request.form.get("quality", "720p")
+
         if url:
             try:
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
 
-                if quality == 'audio_only':
-                    format_string = 'bestaudio/best'
-                elif quality == '1080p':
-                    format_string = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
-                elif quality == '720p':
-                    format_string = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best'
-                elif quality == '480p':
-                    format_string = 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]/best'
-                elif quality == '320p':
-                    format_string = 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=360]+bestaudio/best[height<=360]/best'
-                else:
-                    format_string = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
-
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
+
+                # Pehle available formats check karo
+                check_opts = {
+                    'quiet': True,
+                    'no_warnings': True,
+                    'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
+                }
+
+                height_map = {
+                    '1080p': 1080,
+                    '720p': 720,
+                    '480p': 480,
+                    '320p': 360,
+                }
+
+                with yt_dlp.YoutubeDL(check_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    formats = info.get('formats', [])
+
+                    if quality == 'audio_only':
+                        format_string = 'bestaudio/best'
+                    else:
+                        height = height_map.get(quality, 720)
+
+                        # Available formats mein se best dhundho
+                        available_heights = []
+                        for f in formats:
+                            h = f.get('height')
+                            if h:
+                                available_heights.append(h)
+
+                        available_heights = sorted(set(available_heights), reverse=True)
+
+                        # User ki requested quality ya usse neeche wali best quality
+                        selected_height = height
+                        for h in available_heights:
+                            if h <= height:
+                                selected_height = h
+                                break
+
+                        if not available_heights:
+                            format_string = 'best'
+                        else:
+                            format_string = f'bestvideo[height<={selected_height}]+bestaudio/best[height<={selected_height}]/best'
 
                 ydl_opts = {
                     'outtmpl': 'uploads/%(title)s.%(ext)s',
@@ -337,8 +369,6 @@ def youtube_downloader():
                     'cookiefile': cookiefile_path if os.path.exists(cookiefile_path) else None,
                     'quiet': True,
                     'no_warnings': True,
-                    'extractor_retries': 3,
-                    'format_sort': ['res', 'ext:mp4:m4a'],
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     },
@@ -347,13 +377,17 @@ def youtube_downloader():
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
+
                     mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
                     if os.path.exists(mp4_file):
                         return send_file(mp4_file, as_attachment=True)
                     elif os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
                     else:
-                        all_files = [os.path.join('uploads', f) for f in os.listdir('uploads')]
+                        all_files = [
+                            os.path.join('uploads', f)
+                            for f in os.listdir('uploads')
+                        ]
                         if all_files:
                             latest = max(all_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
