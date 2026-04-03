@@ -372,15 +372,15 @@ def youtube_downloader():
                     filename = ydl.prepare_filename(info)
 
                     if os.path.exists(filename):
-    response = send_file(
-        filename,
-        as_attachment=True,
-        mimetype='video/mp4',
-        conditional=True,
-    )
-    response.headers['Accept-Ranges'] = 'bytes'
-    response.headers['Cache-Control'] = 'no-cache'
-    return response
+                        response = send_file(
+                            filename,
+                            as_attachment=True,
+                            mimetype='video/mp4',
+                            conditional=True,
+                        )
+                        response.headers['Accept-Ranges'] = 'bytes'
+                        response.headers['Cache-Control'] = 'no-cache'
+                        return response
                     else:
                         upload_files = [
                             os.path.join('uploads', f)
