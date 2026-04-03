@@ -353,22 +353,23 @@ def youtube_downloader():
                         format_string = 'best'
 
                 ydl_opts = {
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': format_string,
-                    'cookiefile': cookie_file,
-                    'quiet': True,
-                    'no_warnings': True,
-                    'ignoreerrors': False,
-                    'extractor_retries': 3,
-                    'fragment_retries': 3,
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                    },
-                }
+    'outtmpl': 'uploads/%(title)s.%(ext)s',
+    'format': format_string,
+    'cookiefile': cookie_file,
+    'quiet': True,
+    'no_warnings': True,
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['ios', 'web'],
+        }
+    },
+    'http_headers': {
+        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
+    },
+}
 
-                if ffmpeg_ok:
-                    ydl_opts['merge_output_format'] = 'mp4'
+if ffmpeg_ok:
+    ydl_opts['merge_output_format'] = 'mp4'
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
