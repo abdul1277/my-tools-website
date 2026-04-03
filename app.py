@@ -317,7 +317,6 @@ def youtube_downloader():
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
-
                 cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
 
                 height_map = {
@@ -327,93 +326,26 @@ def youtube_downloader():
                     '320p': 360,
                 }
 
-                # Step 1: Pehle available formats fetch karo
-                info_opts = {
-                    'quiet': True,
-                    'no_warnings': True,
-                    'cookiefile': cookie_file,
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                    },
-                }
-
-                with yt_dlp.YoutubeDL(info_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-
-                formats = info.get('formats', [])
-
                 if quality == 'audio_only':
-                    # Audio ke liye best audio format dhundho
-                    audio_formats = [
-                        f for f in formats
-                        if f.get('vcodec') == 'none' and f.get('acodec') != 'none'
-                    ]
-                    if audio_formats:
-                        best_audio = max(audio_formats, key=lambda x: x.get('abr') or 0)
-                        format_id = best_audio['format_id']
-                        format_string = format_id
-                    else:
-                        format_string = 'bestaudio/best'
+                    format_string = 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio'
                 else:
                     target_height = height_map.get(quality, 720)
+                    # Sirf pre-merged formats use karo — ffmpeg ki zaroorat nahi
+                    format_string = (
+                        f'best[height<={target_height}][ext=mp4]'
+                        f'/best[height<={target_height}]'
+                        f'/best[ext=mp4]'
+                        f'/best'
+                    )
 
-                    # Video formats filter karo
-                    video_formats = [
-                        f for f in formats
-                        if f.get('vcodec') != 'none'
-                        and f.get('height') is not None
-                        and f.get('height') <= target_height
-                    ]
-
-                    # Audio formats
-                    audio_formats = [
-                        f for f in formats
-                        if f.get('vcodec') == 'none'
-                        and f.get('acodec') != 'none'
-                    ]
-
-                    if video_formats and audio_formats:
-                        # Best video (highest available <= target)
-                        best_video = max(video_formats, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
-                        # Best audio
-                        best_audio = max(audio_formats, key=lambda x: x.get('abr') or 0)
-                        format_string = f"{best_video['format_id']}+{best_audio['format_id']}"
-                    elif video_formats:
-                        best_video = max(video_formats, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
-                        format_string = best_video['format_id']
-                    else:
-                        # Koi bhi format nahi mila to fallback
-                        combined = [
-                            f for f in formats
-                            if f.get('height') is not None
-                            and f.get('height') <= target_height
-                            and f.get('acodec') != 'none'
-                        ]
-                        if combined:
-                            best = max(combined, key=lambda x: (x.get('height') or 0, x.get('tbr') or 0))
-                            format_string = best['format_id']
-                        else:
-                            # Last resort — jo bhi available ho
-                            all_combined = [
-                                f for f in formats
-                                if f.get('acodec') != 'none'
-                                and f.get('vcodec') != 'none'
-                            ]
-                            if all_combined:
-                                best = max(all_combined, key=lambda x: x.get('tbr') or 0)
-                                format_string = best['format_id']
-                            else:
-                                format_string = 'best'
-
-                # Step 2: Download karo
                 ydl_opts = {
                     'outtmpl': 'uploads/%(title)s.%(ext)s',
                     'format': format_string,
-                    'merge_output_format': 'mp4',
                     'cookiefile': cookie_file,
                     'quiet': True,
                     'no_warnings': True,
+                    # Merging bilkul nahi karni
+                    'postprocessors': [],
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         'Accept-Language': 'en-US,en;q=0.9',
@@ -421,17 +353,12 @@ def youtube_downloader():
                 }
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    dl_info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(dl_info)
+                    info = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(info)
 
-                    # File dhundho
-                    mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
-                    if os.path.exists(mp4_file):
-                        return send_file(mp4_file, as_attachment=True)
-                    elif os.path.exists(filename):
+                    if os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
                     else:
-                        # Latest file uploads mein dhundho
                         upload_files = [
                             os.path.join('uploads', f)
                             for f in os.listdir('uploads')
