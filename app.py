@@ -11,6 +11,7 @@ import json
 import subprocess
 import requests
 from io import BytesIO
+import shutil
 
 from pdf2docx import Converter
 from docx2pdf import convert as docx2pdf_convert
@@ -319,21 +320,31 @@ def youtube_downloader():
                 )
                 cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
 
-                # YouTube permanent format IDs - ffmpeg bilkul nahi chahiye
-                # 22 = 720p MP4 (video+audio combined) - har video mein hai
-                # 18 = 360p MP4 (video+audio combined) - 100% har video mein hai
+                # ffmpeg available hai ya nahi check karo
+                ffmpeg_ok = shutil.which("ffmpeg") is not None
+
+                height_map = {
+                    '1080p': 1080,
+                    '720p': 720,
+                    '480p': 480,
+                    '320p': 360,
+                }
+
                 if quality == 'audio_only':
-                    format_string = '140/bestaudio[ext=m4a]/bestaudio'
-                elif quality == '1080p':
-                    format_string = '22/18'
-                elif quality == '720p':
-                    format_string = '22/18'
-                elif quality == '480p':
-                    format_string = '18/22'
-                elif quality == '320p':
-                    format_string = '18'
+                    format_string = 'bestaudio/best'
+                elif quality in height_map:
+                    h = height_map[quality]
+                    if ffmpeg_ok:
+                        # ffmpeg hai to high quality merge karo
+                        format_string = f'bestvideo[height<={h}]+bestaudio/best[height<={h}]'
+                    else:
+                        # ffmpeg nahi hai to pre-merged format use karo
+                        format_string = f'best[height<={h}]/best'
                 else:
-                    format_string = '22/18'
+                    if ffmpeg_ok:
+                        format_string = 'bestvideo+bestaudio/best'
+                    else:
+                        format_string = 'best'
 
                 ydl_opts = {
                     'outtmpl': 'uploads/%(title)s.%(ext)s',
@@ -346,6 +357,9 @@ def youtube_downloader():
                         'Accept-Language': 'en-US,en;q=0.9',
                     },
                 }
+
+                if ffmpeg_ok:
+                    ydl_opts['merge_output_format'] = 'mp4'
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
