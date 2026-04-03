@@ -315,66 +315,54 @@ def youtube_downloader():
     if request.method == "POST":
         url = request.form.get("url", "").strip()
         quality = request.form.get("quality", "720p")
-
         if url:
             try:
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
-
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
                 cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
-
-                # ffmpeg available hai ya nahi check karo
                 ffmpeg_ok = shutil.which("ffmpeg") is not None
-
                 height_map = {
                     '1080p': 1080,
                     '720p': 720,
                     '480p': 480,
                     '320p': 360,
                 }
-
                 if quality == 'audio_only':
                     format_string = 'bestaudio[ext=m4a]/bestaudio/best'
                 elif quality in height_map:
                     h = height_map[quality]
                     if ffmpeg_ok:
-                        # ffmpeg hai to high quality merge karo
                         format_string = f'bestvideo[height<={h}]+bestaudio/bestvideo[height<={h}]+bestaudio[ext=m4a]/best[height<={h}]/best'
                     else:
-                        # ffmpeg nahi hai to pre-merged format use karo
                         format_string = f'best[height<={h}]/best[height<={h-100}]/best'
                 else:
                     if ffmpeg_ok:
                         format_string = 'bestvideo+bestaudio/best'
                     else:
                         format_string = 'best'
-
                 ydl_opts = {
-    'outtmpl': 'uploads/%(title)s.%(ext)s',
-    'format': format_string,
-    'cookiefile': cookie_file,
-    'quiet': True,
-    'no_warnings': True,
-    'extractor_args': {
-        'youtube': {
-            'player_client': ['ios', 'web'],
-        }
-    },
-    'http_headers': {
-        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
-    },
-}
-
-if ffmpeg_ok:
-    ydl_opts['merge_output_format'] = 'mp4'
-
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': format_string,
+                    'cookiefile': cookie_file,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['ios', 'web'],
+                        }
+                    },
+                    'http_headers': {
+                        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
+                    },
+                }
+                if ffmpeg_ok:
+                    ydl_opts['merge_output_format'] = 'mp4'
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
-
                     if os.path.exists(filename):
                         response = send_file(
                             filename,
@@ -395,10 +383,8 @@ if ffmpeg_ok:
                             latest = max(upload_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
                         error = "File nahi mili, dobara try karo."
-
             except Exception as e:
                 error = str(e)
-
     return render_template("youtube-downloader.html", error=error)
 
 # =========================
