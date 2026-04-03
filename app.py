@@ -319,98 +319,37 @@ def youtube_downloader():
                 )
                 cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
 
-                height_map = {
-                    '1080p': 1080,
-                    '720p': 720,
-                    '480p': 480,
-                    '320p': 360,
-                }
+                # YouTube permanent format IDs - ffmpeg bilkul nahi chahiye
+                # 22 = 720p MP4 (video+audio combined) - har video mein hai
+                # 18 = 360p MP4 (video+audio combined) - 100% har video mein hai
+                if quality == 'audio_only':
+                    format_string = '140/bestaudio[ext=m4a]/bestaudio'
+                elif quality == '1080p':
+                    format_string = '22/18'
+                elif quality == '720p':
+                    format_string = '22/18'
+                elif quality == '480p':
+                    format_string = '18/22'
+                elif quality == '320p':
+                    format_string = '18'
+                else:
+                    format_string = '22/18'
 
-                common_opts = {
+                ydl_opts = {
+                    'outtmpl': 'uploads/%(title)s.%(ext)s',
+                    'format': format_string,
+                    'cookiefile': cookie_file,
                     'quiet': True,
                     'no_warnings': True,
-                    'cookiefile': cookie_file,
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         'Accept-Language': 'en-US,en;q=0.9',
                     },
                 }
 
-                # Step 1: Pehle available formats fetch karo
-                with yt_dlp.YoutubeDL(common_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-
-                formats = info.get('formats', [])
-
-                if quality == 'audio_only':
-                    # Best audio format dhundho
-                    audio_formats = [
-                        f for f in formats
-                        if f.get('vcodec') == 'none'
-                        and f.get('acodec') not in ('none', None)
-                    ]
-                    if audio_formats:
-                        best_audio = max(
-                            audio_formats,
-                            key=lambda x: x.get('abr') or 0
-                        )
-                        format_id = best_audio['format_id']
-                    else:
-                        format_id = formats[-1]['format_id'] if formats else 'best'
-                else:
-                    target_height = height_map.get(quality, 720)
-
-                    # Sirf PROGRESSIVE formats — video aur audio already combined
-                    # ffmpeg ki bilkul zaroorat nahi!
-                    progressive = [
-                        f for f in formats
-                        if f.get('vcodec') not in ('none', None)
-                        and f.get('acodec') not in ('none', None)
-                        and f.get('height') is not None
-                    ]
-
-                    # Target height ke andar wale formats
-                    suitable = [
-                        f for f in progressive
-                        if (f.get('height') or 0) <= target_height
-                    ]
-
-                    if suitable:
-                        # Sabse achi quality select karo
-                        best = max(
-                            suitable,
-                            key=lambda x: (x.get('height') or 0, x.get('tbr') or 0)
-                        )
-                        format_id = best['format_id']
-                    elif progressive:
-                        # Target height nahi mili to jo bhi available hai
-                        best = max(
-                            progressive,
-                            key=lambda x: (x.get('height') or 0, x.get('tbr') or 0)
-                        )
-                        format_id = best['format_id']
-                    else:
-                        # Last resort — koi bhi combined format
-                        combined = [
-                            f for f in formats
-                            if f.get('acodec') not in ('none', None)
-                            and f.get('vcodec') not in ('none', None)
-                        ]
-                        if combined:
-                            format_id = combined[-1]['format_id']
-                        else:
-                            format_id = formats[-1]['format_id'] if formats else 'best'
-
-                # Step 2: Exact format_id se download karo
-                ydl_opts = {
-                    **common_opts,
-                    'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': format_id,
-                }
-
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    dl_info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(dl_info)
+                    info = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(info)
 
                     if os.path.exists(filename):
                         return send_file(filename, as_attachment=True)
