@@ -372,26 +372,25 @@ def youtube_downloader():
                     filename = ydl.prepare_filename(info)
 
                     if os.path.exists(filename):
-    response = send_file(
-        filename,
-        as_attachment=True,
-        mimetype='video/mp4',
-        conditional=True,
-    )
-    response.headers['Accept-Ranges'] = 'bytes'
-    response.headers['Cache-Control'] = 'no-cache'
-    return response
-else:
-    upload_files = [
-        os.path.join('uploads', f)
-        for f in os.listdir('uploads')
-        if os.path.isfile(os.path.join('uploads', f))
-    ]
-    if upload_files:
-        latest = max(upload_files, key=os.path.getmtime)
-        return send_file(latest, as_attachment=True)
-    error = "File nahi mili, dobara try karo."
-                        
+                        response = send_file(
+                            filename,
+                            as_attachment=True,
+                            mimetype='video/mp4',
+                            conditional=True,
+                        )
+                        response.headers['Accept-Ranges'] = 'bytes'
+                        response.headers['Cache-Control'] = 'no-cache'
+                        return response
+                    else:
+                        upload_files = [
+                            os.path.join('uploads', f)
+                            for f in os.listdir('uploads')
+                            if os.path.isfile(os.path.join('uploads', f))
+                        ]
+                        if upload_files:
+                            latest = max(upload_files, key=os.path.getmtime)
+                            return send_file(latest, as_attachment=True)
+                        error = "File nahi mili, dobara try karo."
 
             except Exception as e:
                 error = str(e)
