@@ -337,15 +337,15 @@ def youtube_downloader():
                 }
 
                 if quality == 'audio_only':
-                    format_string = 'bestaudio/best'
+                    format_string = 'bestaudio[ext=m4a]/bestaudio/best'
                 elif quality in height_map:
                     h = height_map[quality]
                     if ffmpeg_ok:
                         # ffmpeg hai to high quality merge karo
-                        format_string = f'bestvideo[height<={h}]+bestaudio/best[height<={h}]'
+                        format_string = f'bestvideo[height<={h}]+bestaudio/bestvideo[height<={h}]+bestaudio[ext=m4a]/best[height<={h}]/best'
                     else:
                         # ffmpeg nahi hai to pre-merged format use karo
-                        format_string = f'best[height<={h}]/best'
+                        format_string = f'best[height<={h}]/best[height<={h-100}]/best'
                 else:
                     if ffmpeg_ok:
                         format_string = 'bestvideo+bestaudio/best'
@@ -358,6 +358,9 @@ def youtube_downloader():
                     'cookiefile': cookie_file,
                     'quiet': True,
                     'no_warnings': True,
+                    'ignoreerrors': False,
+                    'extractor_retries': 3,
+                    'fragment_retries': 3,
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         'Accept-Language': 'en-US,en;q=0.9',
