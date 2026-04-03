@@ -366,7 +366,12 @@ def youtube_downloader():
                     filename = ydl.prepare_filename(info)
 
                     if os.path.exists(filename):
-                        return send_file(filename, as_attachment=True)
+                        return send_file(
+    filename,
+    as_attachment=True,
+    mimetype='video/mp4',
+    conditional=True,
+)
                     else:
                         upload_files = [
                             os.path.join('uploads', f)
