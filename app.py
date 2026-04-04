@@ -351,11 +351,8 @@ def youtube_downloader():
                     'no_warnings': True,
                     'extractor_args': {
                         'youtube': {
-                            'player_client': ['ios', 'web'],
+                            'player_client': ['ios', 'web','android'],
                         }
-                    },
-                    'http_headers': {
-                        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
                     },
                 }
                 if ffmpeg_ok:
