@@ -3,9 +3,10 @@ services:
     name: smarttoolshub
     runtime: python
     buildCommand: |
-      apt-get update && apt-get install -y ffmpeg poppler-utils libgl1 libglib2.0-0
+      apt-get update && apt-get install -y ffmpeg poppler-utils libgl1 libglib2.0-0 nodejs npm
       pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 500 --keep-alive 500
+      pip install yt-dlp[default]
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 600 --keep-alive 600
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
