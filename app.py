@@ -315,61 +315,66 @@ def youtube_downloader():
     if request.method == "POST":
         url = request.form.get("url", "").strip()
         quality = request.form.get("quality", "720p")
+
         if url:
             try:
                 if not os.path.exists("uploads"):
                     os.makedirs("uploads")
+
                 cookiefile_path = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), 'cookies.txt'
                 )
                 cookie_file = cookiefile_path if os.path.exists(cookiefile_path) else None
                 ffmpeg_ok = shutil.which("ffmpeg") is not None
+
                 height_map = {
                     '1080p': 1080,
                     '720p': 720,
                     '480p': 480,
                     '320p': 360,
                 }
+
+                # -S sort method use karo — format specify nahi karo
+                # Yeh har video par kaam karta hai
                 if quality == 'audio_only':
-                    format_string = 'bestaudio[ext=m4a]/bestaudio/best'
-                elif quality in height_map:
-                    h = height_map[quality]
-                    if ffmpeg_ok:
-                        format_string = f'bestvideo[height<={h}]+bestaudio/bestvideo[height<={h}]+bestaudio[ext=m4a]/best[height<={h}]/best'
-                    else:
-                        format_string = f'best[height<={h}]/best[height<={h-100}]/best'
+                    format_string = 'bestaudio/best'
+                    sort_string = None
                 else:
-                    if ffmpeg_ok:
-                        format_string = 'bestvideo+bestaudio/best'
-                    else:
-                        format_string = 'best'
+                    h = height_map.get(quality, 720)
+                    format_string = None
+                    sort_string = f'vcodec:h264,fps,res:{h},acodec:m4a'
+
                 ydl_opts = {
                     'outtmpl': 'uploads/%(title)s.%(ext)s',
-                    'format': format_string,
                     'cookiefile': cookie_file,
                     'quiet': True,
                     'no_warnings': True,
                     'extractor_args': {
                         'youtube': {
-                            'player_client': ['ios', 'web','android'],
+                            'player_client': ['android_vr', 'web_embedded', 'android'],
                         }
                     },
                 }
+
+                if quality == 'audio_only':
+                    ydl_opts['format'] = format_string
+                else:
+                    # -S sort use karo — format_string nahi
+                    ydl_opts['format'] = f'b[ext=mp4][height<={h}]/b[ext=mp4]/b'
+                    ydl_opts['format_sort'] = [f'res:{h}', 'ext:mp4:m4a', 'codec:h264']
+
                 if ffmpeg_ok:
                     ydl_opts['merge_output_format'] = 'mp4'
+
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
-                    if os.path.exists(filename):
-                        response = send_file(
-                            filename,
-                            as_attachment=True,
-                            mimetype='video/mp4',
-                            conditional=True,
-                        )
-                        response.headers['Accept-Ranges'] = 'bytes'
-                        response.headers['Cache-Control'] = 'no-cache'
-                        return response
+
+                    mp4_file = filename.rsplit('.', 1)[0] + '.mp4'
+                    if os.path.exists(mp4_file):
+                        return send_file(mp4_file, as_attachment=True)
+                    elif os.path.exists(filename):
+                        return send_file(filename, as_attachment=True)
                     else:
                         upload_files = [
                             os.path.join('uploads', f)
@@ -380,8 +385,10 @@ def youtube_downloader():
                             latest = max(upload_files, key=os.path.getmtime)
                             return send_file(latest, as_attachment=True)
                         error = "File nahi mili, dobara try karo."
+
             except Exception as e:
                 error = str(e)
+
     return render_template("youtube-downloader.html", error=error)
 
 # =========================
